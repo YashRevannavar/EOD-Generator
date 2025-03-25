@@ -3,7 +3,5 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+root_path = os.getenv("REPO_PATHS")
 
-def get_repo_paths() -> list:
-    repos = os.getenv("REPO_PATHS")
-    return repos.split(",") if repos else []

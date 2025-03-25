@@ -32,8 +32,12 @@ fi
 # ===== Change to repo directory =====
 cd "$repo_path" || { echo "❌ Failed to access repo at $repo_path"; exit 1; }
 
-# ===== Get Git author =====
+# ===== Get Git author and repo name =====
 author_name="$(git config user.name)"
+repo_name=$(basename "$(git rev-parse --show-toplevel)")
+
+# ===== Print project/repo name =====
+echo "=== Project: $repo_name ==="
 
 # ===== Scan branches and print logs =====
 for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
