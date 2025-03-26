@@ -3,7 +3,7 @@
 .vscode
 .DS_Store
 *.txt
-
+*.pdf
 
 ### Python template
 # Byte-compiled / optimized / DLL files
