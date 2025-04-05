@@ -4,6 +4,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from llm_components.llm_prompts import human_prompt, system_prompt
 
 def get_llm_bedrock_ai() -> ChatBedrock:
+    logging.getLogger('langchain_aws').setLevel(logging.WARNING)
     logging.info("Initializing ChatBedrock")
     return ChatBedrock(
         model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
