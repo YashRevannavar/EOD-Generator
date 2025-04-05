@@ -2,7 +2,7 @@
 .idea
 .vscode
 .DS_Store
-*.txt
+
 *.pdf
 
 ### Python template
