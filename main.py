@@ -1,4 +1,5 @@
 import logging
+
 from git_components.git_service import GitLogFetcher
 from llm_components.llm_connector import llm_summary_generator
 
@@ -41,6 +42,9 @@ def run_sprint_review():
     # print("\nGenerated Summary:")
     # print(summary)
     return None
+
+def test_llm():
+    pass
 
 
 if __name__ == "__main__":
