@@ -37,7 +37,7 @@ class ChatOpenRouter(ChatOpenAI):
 
 def get_openrouter_llm():
     openrouter_model = ChatOpenRouter(
-        model_name="meta-llama/llama-4-scout:free"
+        model_name="meta-llama/llama-4-maverick:free"
     )
     return openrouter_model
 

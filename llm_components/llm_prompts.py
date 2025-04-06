@@ -27,5 +27,5 @@ Format should be simple:
 - (type of commit) Summarised Task 2 
 - (type of commit) Summarised Task 3  so on...
 
-NOTE: Just follow the above format  no prefix or suffix is required.
+NOTE: Just follow the above format no prefix or suffix is required.
 """

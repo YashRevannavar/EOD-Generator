@@ -57,6 +57,7 @@ if __name__ == "__main__":
 
         if choice == "1":
             run_eod()
+            break
         elif choice == "2":
             run_sprint_review()
         elif choice == "3":
