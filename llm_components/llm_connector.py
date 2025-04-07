@@ -1,7 +1,8 @@
 import logging
 import os
 from langchain_core.messages import HumanMessage, SystemMessage
-from llm_components.llm_prompts import human_prompt, system_prompt
+from llm_components.llm_prompts import (eod_human_prompt, eod_system_prompt,
+                                        sprint_review_human_prompt, sprint_review_system_prompt)
 from langchain.chains import LLMChain
 from typing import Optional
 from dotenv import load_dotenv
@@ -42,14 +43,14 @@ def get_openrouter_llm():
     return openrouter_model
 
 
-def llm_summary_generator(collected_commits):
+def llm_eod_summary_generator(collected_commits):
     logging.info("Starting summary generation")
     chat = get_openrouter_llm()
 
     logging.info("Preparing prompts with commit data")
     messages = [
-        HumanMessage(content=human_prompt, collected_commits=collected_commits),
-        SystemMessage(content=system_prompt)
+        HumanMessage(content=eod_human_prompt, collected_commits=collected_commits),
+        SystemMessage(content=eod_system_prompt)
     ]
 
     try:
@@ -58,4 +59,23 @@ def llm_summary_generator(collected_commits):
         return response.content
     except Exception as e:
         logging.error(f"Error generating summary: {str(e)}")
+        return f"Due to {str(e)} we could not generate the summary"
+
+
+def llm_sprint_review_summary_generator(collected_commits, tickets):
+    logging.info("Starting sprint review summary generation")
+    chat = get_openrouter_llm()
+
+    logging.info("Preparing prompts with commit data and tickets")
+    messages = [
+        HumanMessage(content=sprint_review_human_prompt, collected_commits=collected_commits, tickets=tickets),
+        SystemMessage(content=sprint_review_system_prompt)
+    ]
+
+    try:
+        logging.info("Sending request to LLM")
+        response = chat.invoke(str(messages))
+        return response.content
+    except Exception as e:
+        logging.error(f"Error generating sprint review summary: {str(e)}")
         return f"Due to {str(e)} we could not generate the summary"
