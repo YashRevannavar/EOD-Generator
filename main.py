@@ -18,6 +18,7 @@ def run_eod():
     logging.info("Git logs retrieved successfully")
     responses = llm_eod_summary_generator(collected_commits=eod_logs)
     logging.info("Summary generated successfully")
+    logging.info(responses)
     return responses
 
 
@@ -39,4 +40,4 @@ def run_sprint_review(start_date: str, end_date: str, tickets: list[str]):
 
 if __name__ == "__main__":
     # This is now handled by streamlit_app.py
-    pass
+    run_eod()
