@@ -1,14 +1,6 @@
 // Utility functions for UI state management
 let currentProcess = null;
 
-function showLoading() {
-    document.getElementById('loading').classList.remove('hidden');
-}
-
-function hideLoading() {
-    document.getElementById('loading').classList.add('hidden');
-}
-
 function showHome() {
     document.getElementById('homeScreen').classList.remove('hidden');
     document.getElementById('reportScreen').classList.add('hidden');
@@ -101,18 +93,10 @@ let accumulatedResponse = '';
 let isCollectingResponse = false;
 
 function updateResponse(text) {
-    console.log('Updating response with:', { text, length: text.length });
     const responseElement = document.getElementById('response');
-    
-    // Set display properties for proper text wrapping
     responseElement.style.whiteSpace = 'pre-wrap';
     responseElement.style.wordBreak = 'break-word';
-    responseElement.style.maxHeight = 'none';
-    responseElement.style.overflowY = 'auto';
-    
-    // Update content
     responseElement.textContent = text;
-    console.log('Response element updated, content length:', responseElement.textContent.length);
 }
 
 function clearPanels() {
@@ -152,10 +136,8 @@ function handleStream(response) {
     const decoder = new TextDecoder();
     let buffer = '';
 
-    console.log('Starting stream processing');
     return reader.read().then(function processText({ done, value }) {
         if (done) {
-            console.log('Stream complete, final buffer:', buffer);
             if (buffer) {
                 handleStreamChunk(buffer);
             }
@@ -163,11 +145,9 @@ function handleStream(response) {
         }
 
         const chunk = decoder.decode(value, { stream: true });
-        console.log('Received chunk:', { length: chunk.length, preview: chunk.substring(0, 100) });
-        
         buffer += chunk;
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // Keep the last partial line in the buffer
+        buffer = lines.pop();
 
         lines.forEach(line => {
             if (line.trim()) {
@@ -180,34 +160,27 @@ function handleStream(response) {
 }
 
 function handleStreamChunk(text) {
-    console.log('Processing chunk:', { text: text.substring(0, 100) + '...', length: text.length });
-    
     if (text.includes('RESPONSE_START')) {
-        console.log('Found response start marker');
         isCollectingResponse = true;
         accumulatedResponse = '';
         return;
     }
     
     if (text.includes('RESPONSE_END')) {
-        console.log('Found response end marker');
         isCollectingResponse = false;
-        console.log('Final accumulated response:', { 
-            length: accumulatedResponse.length,
-            preview: accumulatedResponse.substring(0, 100)
-        });
         updateResponse(accumulatedResponse.trim());
         return;
     }
     
     if (isCollectingResponse) {
         accumulatedResponse += text + '\n';
+        // Update response in real-time as we receive chunks
+        updateResponse(accumulatedResponse.trim());
         return;
     }
     
     if (text.includes('Error:')) {
         updateLogs(text);
-        hideLoading();
     } else if (!text.includes('RESPONSE')) {
         updateLogs(text);
     }
@@ -217,14 +190,12 @@ function handleStreamChunk(text) {
 async function handleEOD() {
     showReport();
     clearPanels();
-    showLoading();
     updateLogs('Starting EOD Generator...\n');
     
     try {
         const controller = new AbortController();
         currentProcess = controller;
         
-        console.log('Sending EOD request');
         const response = await fetch('http://localhost:5001/run-eod', { 
             method: 'POST',
             signal: controller.signal
@@ -236,7 +207,6 @@ async function handleEOD() {
         
         await handleStream(response);
     } catch (error) {
-        console.error('EOD error:', error);
         if (error.name === 'AbortError') {
             updateLogs('Process cancelled.\n');
         } else {
@@ -244,7 +214,6 @@ async function handleEOD() {
             updateResponse('Failed to generate EOD report.');
         }
     } finally {
-        hideLoading();
         currentProcess = null;
     }
 }
@@ -267,14 +236,12 @@ async function handleSprintReviewSubmit() {
     hideSprintReviewModal();
     showReport();
     clearPanels();
-    showLoading();
     updateLogs('Starting Sprint Review Generator...\n');
     
     try {
         const controller = new AbortController();
         currentProcess = controller;
         
-        console.log('Sending Sprint Review request:', { startDate, endDate, tickets });
         const response = await fetch('http://localhost:5001/run-sprint-review', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -288,7 +255,6 @@ async function handleSprintReviewSubmit() {
         
         await handleStream(response);
     } catch (error) {
-        console.error('Sprint Review error:', error);
         if (error.name === 'AbortError') {
             updateLogs('Process cancelled.\n');
         } else {
@@ -296,7 +262,6 @@ async function handleSprintReviewSubmit() {
             updateResponse('Failed to generate Sprint Review report.');
         }
     } finally {
-        hideLoading();
         currentProcess = null;
     }
 }

@@ -1,10 +1,11 @@
 import logging
-from flask import Flask, render_template, request, Response, jsonify
+from flask import Flask, render_template, request, Response, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 import traceback
 from git_components.git_service import GitLogFetcher
 from llm_components.llm_connector import llm_eod_summary_generator, llm_sprint_review_summary_generator
+import os
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
@@ -26,6 +27,10 @@ def format_error(error):
 def home():
     return app.send_static_file('index.html')
 
+@app.route('/images/<path:filename>')
+def serve_image(filename):
+    return send_from_directory('static/images', filename)
+
 @app.route('/run-eod', methods=['POST'])
 def run_eod():
     def generate():
@@ -40,11 +45,9 @@ def run_eod():
             logging.info(f"Generated response length: {len(responses)}")
             logging.info(f"Response preview: {responses[:100]}...")
             
-            # Ensure response is properly formatted
             formatted_response = responses.strip().replace('\r\n', '\n').replace('\r', '\n')
             yield "Summary generated successfully\n"
             
-            # Send response in a clearly delimited format
             yield f"RESPONSE_START\n{formatted_response}\nRESPONSE_END"
             
         except Exception as e:
@@ -82,11 +85,9 @@ def run_sprint_review():
                 logging.info(f"Generated sprint review length: {len(summary)}")
                 logging.info(f"Sprint review preview: {summary[:100]}...")
                 
-                # Ensure response is properly formatted
                 formatted_summary = summary.strip().replace('\r\n', '\n').replace('\r', '\n')
                 yield "Summary generated successfully\n"
                 
-                # Send response in a clearly delimited format
                 yield f"RESPONSE_START\n{formatted_summary}\nRESPONSE_END"
                 
             except Exception as e:
