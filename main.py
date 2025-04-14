@@ -37,8 +37,16 @@ def run_eod():
             yield "Git logs retrieved successfully\n"
             
             responses = llm_eod_summary_generator(collected_commits=eod_logs)
+            logging.info(f"Generated response length: {len(responses)}")
+            logging.info(f"Response preview: {responses[:100]}...")
+            
+            # Ensure response is properly formatted
+            formatted_response = responses.strip().replace('\r\n', '\n').replace('\r', '\n')
             yield "Summary generated successfully\n"
-            yield f"RESPONSE:{responses}"
+            
+            # Send response in a clearly delimited format
+            yield f"RESPONSE_START\n{formatted_response}\nRESPONSE_END"
+            
         except Exception as e:
             error_details = format_error(e)
             logging.error(f"Error in run_eod: {error_details}")
@@ -71,8 +79,16 @@ def run_sprint_review():
                     collected_commits=sprint_review_logs, 
                     tickets=tickets
                 )
+                logging.info(f"Generated sprint review length: {len(summary)}")
+                logging.info(f"Sprint review preview: {summary[:100]}...")
+                
+                # Ensure response is properly formatted
+                formatted_summary = summary.strip().replace('\r\n', '\n').replace('\r', '\n')
                 yield "Summary generated successfully\n"
-                yield f"RESPONSE:{summary}"
+                
+                # Send response in a clearly delimited format
+                yield f"RESPONSE_START\n{formatted_summary}\nRESPONSE_END"
+                
             except Exception as e:
                 error_details = format_error(e)
                 logging.error(f"Error in run_sprint_review: {error_details}")
