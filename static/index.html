@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git EOD & Sprint Review Generator | Automated Development Summaries</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#8B92A5',
+                            200: '#636B7D',
+                            300: '#48505E',
+                            400: '#2E343F',
+                            500: '#1F242C',
+                            600: '#171B21',
+                            700: '#0F1115'
+                        },
+                        primary: {
+                            light: '#60A5FA',
+                            DEFAULT: '#3B82F6',
+                            dark: '#2563EB'
+                        },
+                        success: {
+                            light: '#4ADE80',
+                            DEFAULT: '#22C55E',
+                            dark: '#16A34A'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* [Previous styles remain unchanged] */
+        .bg-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: url('/images/background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.6;
+        }
+
+        /* Fallback background color in case image fails to load */
+        body {
+            background-color: #0F1115;
+        }
+
+        .content-overlay {
+            position: relative;
+            z-index: 1;
+            background-color: rgba(15, 17, 21, 0.75);
+            min-height: 100vh;
+        }
+
+        .btn-3d {
+            position: relative;
+            transition: all 0.2s ease;
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+        }
+
+        .btn-3d::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+        }
+
+        .btn-3d::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -2px rgba(0, 0, 0, 0.1),
+                0 8px 24px -4px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .btn-3d:hover {
+            transform: translateY(-2px) translateZ(0);
+        }
+
+        .btn-3d:hover::after {
+            box-shadow: 
+                0 6px 8px -1px rgba(0, 0, 0, 0.15),
+                0 4px 6px -2px rgba(0, 0, 0, 0.1),
+                0 12px 32px -4px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-3d:active {
+            transform: translateY(1px) translateZ(0);
+        }
+
+        .btn-3d:active::after {
+            box-shadow: 
+                0 2px 4px -1px rgba(0, 0, 0, 0.1),
+                0 1px 2px -1px rgba(0, 0, 0, 0.1),
+                0 4px 16px -4px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+    <script src="/script.js" defer></script>
+</head>
+<body>
+    <!-- Background Image -->
+    <div class="bg-image"></div>
+
+    <!-- Content Wrapper -->
+    <div class="content-overlay">
+        <!-- Home Screen -->
+        <div id="homeScreen" class="min-h-screen p-6 flex flex-col items-center justify-center">
+            <div class="w-full max-w-3xl space-y-8">
+                <div class="text-center space-y-4">
+                    <h1 class="text-4xl font-bold text-gray-100">Git EOD & Sprint Review Generator</h1>
+                    <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                        Automatically generate comprehensive summaries of your development work using Git history and AI-powered analysis
+                    </p>
+                </div>
+
+                <div class="bg-dark-500/50 backdrop-blur-sm p-6 rounded-lg border border-dark-400 mb-8">
+                    <h2 class="text-xl font-semibold text-gray-200 mb-4">Features</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-primary-light mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <div>
+                                <h3 class="font-medium">Daily Summaries</h3>
+                                <p class="text-sm text-gray-400">Automated EOD reports from your Git commits</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-success-light mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <div>
+                                <h3 class="font-medium">Sprint Reviews</h3>
+                                <p class="text-sm text-gray-400">Detailed sprint summaries with ticket tracking</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <button onclick="handleEOD()" class="btn-3d w-full p-6 bg-gradient-to-br from-primary-light to-primary rounded-lg shadow-lg flex flex-col items-center">
+                        <span class="text-xl font-semibold">Generate EOD</span>
+                        <span class="text-sm mt-2 opacity-80">Create a summary of today's Git commits</span>
+                    </button>
+                    
+                    <button onclick="showSprintReviewModal()" class="btn-3d w-full p-6 bg-gradient-to-br from-success-light to-success rounded-lg shadow-lg flex flex-col items-center">
+                        <span class="text-xl font-semibold">Run Sprint Review</span>
+                        <span class="text-sm mt-2 opacity-80">Generate a comprehensive sprint summary</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="quit()" class="btn-3d mt-12 px-6 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg">
+                Quit
+            </button>
+        </div>
+
+        <!-- [Rest of the code remains unchanged] -->
+        <!-- EOD Report Screen -->
+        <div id="reportScreen" class="min-h-screen p-6 hidden">
+            <nav class="mb-6">
+                <button onclick="goHome()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg flex items-center gap-2 group">
+                    <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    <span>Back to Home</span>
+                </button>
+            </nav>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-8rem)]">
+                <!-- Logs Panel -->
+                <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg overflow-auto border border-dark-400">
+                    <div class="p-4 border-b border-dark-400">
+                        <h2 class="font-semibold text-gray-200">Logs</h2>
+                    </div>
+                    <pre id="logs" class="p-4 font-mono text-sm text-gray-300 whitespace-pre-wrap"></pre>
+                </div>
+
+                <!-- Response Panel -->
+                <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg overflow-auto relative border border-dark-400">
+                    <div class="p-4 border-b border-dark-400 flex justify-between items-center">
+                        <h2 class="font-semibold text-gray-200">Generated Response</h2>
+                        <button onclick="copyResponse()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg text-sm">
+                            Copy
+                        </button>
+                    </div>
+                    <pre id="response" class="p-4 text-sm text-gray-300 whitespace-pre-wrap"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sprint Review Modal -->
+        <div id="sprintReviewModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden backdrop-blur-sm">
+            <div class="bg-dark-500/95 backdrop-blur-sm rounded-lg shadow-xl p-6 w-full max-w-xl mx-4 border border-dark-400">
+                <h2 class="text-2xl font-bold mb-6 text-gray-100">Sprint Review Details</h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
+                            <input type="date" id="startDate" class="w-full px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">End Date</label>
+                            <input type="date" id="endDate" class="w-full px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Tickets</label>
+                        <div class="space-y-2" id="ticketList">
+                            <div class="flex gap-2">
+                                <input type="text" class="ticket-input flex-grow px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200" placeholder="Enter ticket">
+                                <button onclick="removeTicket(this)" class="btn-3d px-3 py-2 bg-gradient-to-b from-red-500/90 to-red-600 text-white rounded-md">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                        <button onclick="addTicket()" class="mt-2 text-sm text-primary-light hover:text-primary transition-colors flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Add Another Ticket
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button onclick="hideSprintReviewModal()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg">
+                        Cancel
+                    </button>
+                    <button onclick="handleSprintReviewSubmit()" class="btn-3d px-4 py-2 bg-gradient-to-br from-success-light to-success text-white rounded-lg">
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
