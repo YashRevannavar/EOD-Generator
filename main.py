@@ -1,8 +1,11 @@
 import logging
+import sys
+import os
 from flask import Flask, render_template, request, Response, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 import traceback
+import signal
 from git_components.git_service import GitLogFetcher
 from llm_components.llm_connector import llm_eod_summary_generator, llm_sprint_review_summary_generator
 import os
@@ -107,5 +110,32 @@ def handle_error(e):
     logging.error(f"Unhandled error: {error_details}")
     return jsonify({'error': str(e)}), 500
 
+@app.route('/terminate', methods=['POST'])
+def terminate():
+    try:
+        # Send SIGTERM to the current process
+        logging.info("Terminating server...")
+        pid = os.getpid()
+        if sys.platform == 'win32':
+            os.kill(pid, signal.CTRL_C_EVENT)
+        else:
+            os.kill(pid, signal.SIGTERM)
+        return jsonify({'status': 'Server termination initiated'}), 200
+    except Exception as e:
+        error_details = format_error(e)
+        logging.error(f"Error during termination: {error_details}")
+        return jsonify({'error': str(e)}), 500
+
+def signal_handler(signum, frame):
+    logging.info(f"Received signal {signum}. Shutting down...")
+    sys.exit(0)
+
 if __name__ == "__main__":
+    # Register signal handlers
+    signal.signal(signal.SIGTERM, signal_handler)
+    if sys.platform == 'win32':
+        signal.signal(signal.CTRL_C_EVENT, signal_handler)
+    else:
+        signal.signal(signal.SIGINT, signal_handler)
+    
     app.run(debug=True, port=5001)

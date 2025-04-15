@@ -1,5 +1,7 @@
 // Utility functions for UI state management
 let currentProcess = null;
+let lastEODContext = null;
+let lastSprintReviewContext = null;
 
 function showHome() {
     document.getElementById('homeScreen').classList.remove('hidden');
@@ -12,19 +14,39 @@ function showReport() {
 }
 
 // Sprint Review Modal Functions
-function showSprintReviewModal() {
+function showSprintReviewModal(context = null) {
     document.getElementById('sprintReviewModal').classList.remove('hidden');
-    // Set default dates
-    const today = new Date();
-    const twoWeeksAgo = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000));
-    
-    document.getElementById('startDate').value = formatDate(twoWeeksAgo);
-    document.getElementById('endDate').value = formatDate(today);
+    // Set default dates or use context
+    if (context) {
+        document.getElementById('startDate').value = context.startDate;
+        document.getElementById('endDate').value = context.endDate;
+        // Restore tickets
+        const ticketList = document.getElementById('ticketList');
+        ticketList.innerHTML = '';
+        context.tickets.forEach(ticket => {
+            const ticketDiv = document.createElement('div');
+            ticketDiv.className = 'flex gap-2';
+            ticketDiv.innerHTML = `
+                <input type="text" class="ticket-input flex-grow px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200" placeholder="Enter ticket" value="${ticket}">
+                <button onclick="removeTicket(this)" class="btn-3d px-3 py-2 bg-gradient-to-b from-red-500/90 to-red-600 text-white rounded-md">✕</button>
+            `;
+            ticketList.appendChild(ticketDiv);
+        });
+    } else {
+        // Set default dates
+        const today = new Date();
+        const twoWeeksAgo = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000));
+        document.getElementById('startDate').value = formatDate(twoWeeksAgo);
+        document.getElementById('endDate').value = formatDate(today);
+        resetTicketList();
+    }
 }
 
 function hideSprintReviewModal() {
     document.getElementById('sprintReviewModal').classList.add('hidden');
-    resetSprintReviewForm();
+    if (!lastSprintReviewContext) {
+        resetSprintReviewForm();
+    }
 }
 
 function formatDate(date) {
@@ -34,11 +56,15 @@ function formatDate(date) {
 function resetSprintReviewForm() {
     document.getElementById('startDate').value = '';
     document.getElementById('endDate').value = '';
+    resetTicketList();
+}
+
+function resetTicketList() {
     const ticketList = document.getElementById('ticketList');
     ticketList.innerHTML = `
         <div class="flex gap-2">
-            <input type="text" class="ticket-input flex-grow px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Enter ticket">
-            <button onclick="removeTicket(this)" class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors">✕</button>
+            <input type="text" class="ticket-input flex-grow px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200" placeholder="Enter ticket">
+            <button onclick="removeTicket(this)" class="btn-3d px-3 py-2 bg-gradient-to-b from-red-500/90 to-red-600 text-white rounded-md">✕</button>
         </div>
     `;
 }
@@ -48,8 +74,8 @@ function addTicket() {
     const newTicket = document.createElement('div');
     newTicket.className = 'flex gap-2';
     newTicket.innerHTML = `
-        <input type="text" class="ticket-input flex-grow px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Enter ticket">
-        <button onclick="removeTicket(this)" class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors">✕</button>
+        <input type="text" class="ticket-input flex-grow px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200" placeholder="Enter ticket">
+        <button onclick="removeTicket(this)" class="btn-3d px-3 py-2 bg-gradient-to-b from-red-500/90 to-red-600 text-white rounded-md">✕</button>
     `;
     ticketList.appendChild(newTicket);
 }
@@ -89,6 +115,49 @@ function updateLogs(message) {
     logsElement.scrollTop = logsElement.scrollHeight;
 }
 
+function showErrorModal(message) {
+    const errorModal = document.getElementById('errorModal');
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorModal.classList.remove('hidden');
+}
+
+function hideErrorModal() {
+    document.getElementById('errorModal').classList.add('hidden');
+    // Clear last error context if user cancels
+    if (!document.getElementById('sprintReviewModal').classList.contains('hidden')) {
+        lastSprintReviewContext = null;
+        resetSprintReviewForm();
+    }
+}
+
+function retryOperation() {
+    hideErrorModal();
+    if (lastSprintReviewContext) {
+        handleSprintReviewSubmit(lastSprintReviewContext);
+    } else if (lastEODContext) {
+        handleEOD(true);
+    }
+}
+
+function handleError(error) {
+    let errorMessage = 'An unexpected error occurred.';
+    
+    if (error.name === 'AbortError') {
+        errorMessage = 'Process was cancelled.';
+    } else if (error.message.includes('HTTP error')) {
+        errorMessage = 'Failed to connect to the server. Please check your connection and try again.';
+    } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Could not reach the server. Please ensure the service is running.';
+    } else {
+        errorMessage = `Error: ${error.message}`;
+    }
+    
+    updateLogs(errorMessage);
+    updateResponse('Operation failed. Please try again.');
+    showErrorModal(errorMessage);
+}
+
 let accumulatedResponse = '';
 let isCollectingResponse = false;
 
@@ -104,6 +173,8 @@ function clearPanels() {
     document.getElementById('response').textContent = '';
     accumulatedResponse = '';
     isCollectingResponse = false;
+    // Hide error modal if it's showing
+    document.getElementById('errorModal').classList.add('hidden');
 }
 
 // Navigation handlers
@@ -112,6 +183,8 @@ function goHome() {
         if (confirm('Are you sure you want to cancel the current process?')) {
             currentProcess.abort();
             currentProcess = null;
+            lastEODContext = null;
+            lastSprintReviewContext = null;
         } else {
             return;
         }
@@ -119,13 +192,22 @@ function goHome() {
     showHome();
 }
 
-function quit() {
+async function quit() {
     if (currentProcess) {
-        if (confirm('Are you sure you want to quit? Current process will be terminated.')) {
-            currentProcess.abort();
-            window.close();
+        if (!confirm('Are you sure you want to quit? Current process will be terminated.')) {
+            return;
         }
-    } else {
+        currentProcess.abort();
+    }
+    
+    try {
+        // Send termination signal to server
+        await fetch('http://localhost:5001/terminate', {
+            method: 'POST'
+        });
+    } catch (error) {
+        console.error('Error terminating server:', error);
+    } finally {
         window.close();
     }
 }
@@ -174,20 +256,25 @@ function handleStreamChunk(text) {
     
     if (isCollectingResponse) {
         accumulatedResponse += text + '\n';
-        // Update response in real-time as we receive chunks
         updateResponse(accumulatedResponse.trim());
         return;
     }
     
     if (text.includes('Error:')) {
         updateLogs(text);
+        if (!text.includes('Process cancelled')) {
+            showErrorModal(text.replace('Error:', '').trim());
+        }
     } else if (!text.includes('RESPONSE')) {
         updateLogs(text);
     }
 }
 
 // Main process handlers
-async function handleEOD() {
+async function handleEOD(isRetry = false) {
+    if (!isRetry) {
+        lastEODContext = true;
+    }
     showReport();
     clearPanels();
     updateLogs('Starting EOD Generator...\n');
@@ -208,29 +295,37 @@ async function handleEOD() {
         await handleStream(response);
     } catch (error) {
         if (error.name === 'AbortError') {
-            updateLogs('Process cancelled.\n');
+            handleError(error);
         } else {
-            updateLogs('Error: ' + error.message + '\n');
-            updateResponse('Failed to generate EOD report.');
+            handleError(error);
         }
     } finally {
         currentProcess = null;
     }
 }
 
-async function handleSprintReviewSubmit() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    const tickets = getTickets();
+async function handleSprintReviewSubmit(context = null) {
+    const startDate = context ? context.startDate : document.getElementById('startDate').value;
+    const endDate = context ? context.endDate : document.getElementById('endDate').value;
+    const tickets = context ? context.tickets : getTickets();
 
     if (!startDate || !endDate) {
-        alert('Please select both start and end dates');
+        showErrorModal('Please select both start and end dates');
         return;
     }
 
     if (!tickets.length) {
-        alert('Please enter at least one ticket');
+        showErrorModal('Please enter at least one ticket');
         return;
+    }
+
+    // Save context for potential retry
+    if (!context) {
+        lastSprintReviewContext = {
+            startDate,
+            endDate,
+            tickets
+        };
     }
 
     hideSprintReviewModal();
@@ -245,7 +340,22 @@ async function handleSprintReviewSubmit() {
         const response = await fetch('http://localhost:5001/run-sprint-review', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startDate, endDate, tickets }),
+            body: JSON.stringify({ 
+                startDate, 
+                endDate, 
+                tickets,
+                metadata: {
+                    date_range: {
+                        start: startDate,
+                        end: endDate
+                    },
+                    ticket_details: tickets.map(ticket => ({
+                        id: ticket,
+                        type: ticket.split('-')[0],
+                        number: ticket.split('-')[1]
+                    }))
+                }
+            }),
             signal: controller.signal
         });
         
@@ -256,10 +366,9 @@ async function handleSprintReviewSubmit() {
         await handleStream(response);
     } catch (error) {
         if (error.name === 'AbortError') {
-            updateLogs('Process cancelled.\n');
+            handleError(error);
         } else {
-            updateLogs('Error: ' + error.message + '\n');
-            updateResponse('Failed to generate Sprint Review report.');
+            handleError(error);
         }
     } finally {
         currentProcess = null;
