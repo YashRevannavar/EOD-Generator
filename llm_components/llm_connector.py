@@ -38,7 +38,7 @@ class ChatOpenRouter(ChatOpenAI):
 
 def get_openrouter_llm():
     openrouter_model = ChatOpenRouter(
-        model_name="google/gemini-2.5-pro-exp-03-25:free"
+        model_name="deepseek/deepseek-r1-distill-llama-70b:free"
     )
     return openrouter_model
 
