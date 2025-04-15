@@ -56,7 +56,6 @@ def llm_eod_summary_generator(collected_commits):
     try:
         logging.info("Sending request to LLM")
         response = chat.invoke(str(messages))
-        raise Exception("Test exception")  # Simulate an error
         return response.content
     except Exception as e:
         logging.error(f"Error generating summary: {str(e)}")
@@ -76,7 +75,6 @@ def llm_sprint_review_summary_generator(collected_commits, tickets):
     try:
         logging.info("Sending request to LLM")
         response = chat.invoke(str(messages))
-        raise Exception("Test exception")  # Simulate an error
         return response.content
     except Exception as e:
         logging.error(f"Error generating sprint review summary: {str(e)}")
