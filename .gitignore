@@ -2,8 +2,10 @@
 .idea
 .vscode
 .DS_Store
+report.md
 
 *.pdf
+data/
 
 ### Python template
 # Byte-compiled / optimized / DLL files

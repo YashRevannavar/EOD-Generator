@@ -59,7 +59,7 @@ def llm_eod_summary_generator(collected_commits):
         return response.content
     except Exception as e:
         logging.error(f"Error generating summary: {str(e)}")
-        return f"Due to {str(e)} we could not generate the summary"
+        raise Exception(f"Due to {str(e)} we could not generate the summary")
 
 
 def llm_sprint_review_summary_generator(collected_commits, tickets):
@@ -78,4 +78,4 @@ def llm_sprint_review_summary_generator(collected_commits, tickets):
         return response.content
     except Exception as e:
         logging.error(f"Error generating sprint review summary: {str(e)}")
-        return f"Due to {str(e)} we could not generate the summary"
+        raise Exception(f"Due to {str(e)} we could not generate the sprint review summary")
