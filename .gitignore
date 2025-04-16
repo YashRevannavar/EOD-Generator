@@ -5,6 +5,7 @@
 report.md
 
 *.pdf
+data/.history.json
 
 ### Python template
 # Byte-compiled / optimized / DLL files
