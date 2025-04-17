@@ -29,6 +29,7 @@ Formatting Example:
       - (scope) Description of change.
 ------------
 Never use ** in your response, keep it simple.
+Stick to the formatting and instructions provided do not respond with any other information like thinking process or reasoning.
 """
 
 sprint_review_human_prompt = """
@@ -64,4 +65,5 @@ Format:
 - Summary: [Plain language summary focusing on outcomes and business value.]
 ------------
 Never use ** in your response, keep it simple.
+Stick to the formatting and instructions provided do not respond with any other information like thinking process or reasoning.
 """

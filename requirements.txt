@@ -35,4 +35,4 @@ urllib3==2.3.0
 zstandard==0.23.0
 langchain
 langchain_community
-langchain_openai
+langchain-ollama

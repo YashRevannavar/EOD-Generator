@@ -1,81 +1,92 @@
-import logging
 import os
-from langchain_core.messages import HumanMessage, SystemMessage
-from llm_components.llm_prompts import (eod_human_prompt, eod_system_prompt,
-                                        sprint_review_human_prompt, sprint_review_system_prompt)
-from langchain.chains import LLMChain
+import logging
 from typing import Optional
 from dotenv import load_dotenv
-from langchain_core.utils.utils import secret_from_env
-from langchain_openai import ChatOpenAI
-from pydantic import Field, SecretStr
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
+from langchain_community.llms import Ollama
 
 load_dotenv()
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class ChatOpenRouter(ChatOpenAI):
-    openai_api_key: Optional[SecretStr] = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENROUTER_API_KEY", default=None),
-    )
+# Define the Ollama model using an environment variable
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1:1.5b")
 
-    @property
-    def lc_secrets(self) -> dict[str, str]:
-        return {"openai_api_key": "OPENROUTER_API_KEY"}
-
-    def __init__(self,
-                 openai_api_key: Optional[str] = None,
-                 **kwargs):
-        openai_api_key = (
-                openai_api_key or os.environ.get("OPENROUTER_API_KEY")
-        )
-        super().__init__(
-            base_url=os.environ.get("OPENROUTER_BASE_URL"),
-            openai_api_key=openai_api_key,
-            **kwargs
-        )
+def ollama_llm():
+    """
+    Initialize Ollama LLM
+    """
+    try:
+        llm = Ollama(model=OLLAMA_MODEL)
+        logging.info(f"Ollama LLM initialized with model: {OLLAMA_MODEL}")
+        return llm
+    except Exception as e:
+        logging.error(f"Error initializing Ollama LLM: {e}")
+        raise
 
 
-def get_openrouter_llm():
-    openrouter_model = ChatOpenRouter(
-        model_name="deepseek/deepseek-r1-distill-llama-70b:free"
-    )
-    return openrouter_model
+def llm_eod_summary_generator(collected_commits: str) -> str:
+    """
+    Generates an end-of-day summary using Ollama.
+    """
+    logging.info("Starting end-of-day summary generation")
+    llm = ollama_llm()
 
+    # Define the prompt template with a system message
+    prompt = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(
+            "You are a helpful assistant that summarizes git commits for end-of-day reports. Be concise and informative."
+        ),
+        HumanMessagePromptTemplate.from_template(
+            "Here are the collected commits: {collected_commits}"
+        ),
+    ])
 
-def llm_eod_summary_generator(collected_commits):
-    logging.info("Starting summary generation")
-    chat = get_openrouter_llm()
-
-    logging.info("Preparing prompts with commit data")
-    messages = [
-        HumanMessage(content=eod_human_prompt, collected_commits=collected_commits),
-        SystemMessage(content=eod_system_prompt)
-    ]
+    # Create the chain
+    chain = prompt | llm
 
     try:
         logging.info("Sending request to LLM")
-        response = chat.invoke(str(messages))
-        return response.content
+        response = chain.invoke({"collected_commits": collected_commits})
+        logging.info(f"Generated summary: {response}")  # Log the generated summary
+        return response
     except Exception as e:
-        logging.error(f"Error generating summary: {str(e)}")
-        raise Exception(f"Due to {str(e)} we could not generate the summary")
+        logging.error(f"Error generating summary: {e}")
+        raise Exception(f"Due to {e} we could not generate the summary")
 
 
-def llm_sprint_review_summary_generator(collected_commits, tickets):
+def llm_sprint_review_summary_generator(collected_commits: str, tickets: str) -> str:
+    """
+    Generates a sprint review summary using Ollama.
+    """
     logging.info("Starting sprint review summary generation")
-    chat = get_openrouter_llm()
+    llm = ollama_llm()
 
-    logging.info("Preparing prompts with commit data and tickets")
-    messages = [
-        HumanMessage(content=sprint_review_human_prompt, collected_commits=collected_commits, tickets=tickets),
-        SystemMessage(content=sprint_review_system_prompt)
-    ]
+    # Define the prompt template with a system message
+    prompt = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(
+            "You are a helpful assistant that summarizes git commits and tickets for sprint review reports. Be concise and informative."
+        ),
+        HumanMessagePromptTemplate.from_template(
+            "Here are the collected commits: {collected_commits}. Here are the tickets: {tickets}"
+        ),
+    ])
+
+    # Create the chain
+    chain = prompt | llm
 
     try:
         logging.info("Sending request to LLM")
-        response = chat.invoke(str(messages))
-        return response.content
+        response = chain.invoke({"collected_commits": collected_commits, "tickets": tickets})
+        logging.info(f"Generated summary: {response}")  # Log the generated summary
+        return response
     except Exception as e:
-        logging.error(f"Error generating sprint review summary: {str(e)}")
-        raise Exception(f"Due to {str(e)} we could not generate the sprint review summary")
+        logging.error(f"Error generating sprint review summary: {e}")
+        raise Exception(f"Due to {e} we could not generate the sprint review summary")
