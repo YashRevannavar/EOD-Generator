@@ -2,8 +2,9 @@ import os
 import subprocess
 import logging
 from environment.constants import root_path
+from services.interfaces import IGitService # Import the interface
 
-class GitLogFetcher:
+class GitLogFetcher(IGitService): # Inherit from the interface
     def __init__(self, root_path: str = root_path):
         self.root_path = root_path
 
@@ -20,15 +21,16 @@ class GitLogFetcher:
         logging.info(f"Found {len(git_repos)} Git repositories")
         return git_repos
 
-    def get_git_logs(self, days: int = 1) -> list:
+    def get_git_logs(self, days: int = 1) -> str: # Return type changed to str
         """
-        Returns a list of logs for all Git repositories under root_path.
+        Returns a concatenated string of logs for all Git repositories under root_path.
         """
         logging.info(f"Getting git logs for past {days} day(s)")
-        logs = []
+        logs_list = []
         for repo_path in self.get_git_repo_paths():
-            logs.append(self.get_git_logs_for_single_repo(repo_path, days=days))
-        return logs
+            logs_list.append(self.get_git_logs_for_single_repo(repo_path, days=days))
+        # Combine logs from all repos into a single string
+        return "\n\n---\n\n".join(log for log in logs_list if log) # Added separator
 
     def get_git_logs_for_single_repo(self, repo_path: str, days: int = 1) -> str:
         """
@@ -44,13 +46,13 @@ class GitLogFetcher:
             logging.error(f"Error getting git logs: {e.stderr}")
             raise e
 
-    def get_git_logs_by_date_range(self, start_date: str, end_date: str) -> list:
+    def get_git_logs_by_date_range(self, start_date: str, end_date: str) -> str: # Return type changed to str
         """
-        Returns logs for all Git repositories between given start and end dates.
+        Returns a concatenated string of logs for all Git repositories between given start and end dates.
         Dates must be in 'YYYY-MM-DD' format.
         """
         logging.info(f"Getting git logs from {start_date} to {end_date}")
-        logs = []
+        logs_list = []
         script_path = "git_components/sprint_review_git_connector.sh"
         for repo_path in self.get_git_repo_paths():
             command = [
@@ -61,8 +63,12 @@ class GitLogFetcher:
             ]
             try:
                 result = subprocess.run(command, check=True, capture_output=True, text=True)
-                logs.append(result.stdout.strip())
+                logs_list.append(result.stdout.strip())
             except subprocess.CalledProcessError as e:
                 logging.error(f"Error getting git logs for {repo_path}: {e.stderr}")
-                raise e
-        return logs
+                # Decide if one failure should stop all (raise e) or just skip (continue)
+                # For now, let's skip the repo with an error but log it.
+                logging.warning(f"Skipping repo {repo_path} due to error.")
+                continue # Or re-raise e if one failure should stop everything
+        # Combine logs from all repos into a single string
+        return "\n\n---\n\n".join(log for log in logs_list if log) # Added separator

@@ -7,9 +7,12 @@ import json
 import traceback
 import signal
 from git_components.git_service import GitLogFetcher
-from llm_components.llm_connector import llm_eod_summary_generator, llm_sprint_review_summary_generator
-from history_components.history_service import HistoryService, HistoryEntry
-from llm_components.llm_prompts import DailySummary, TicketSummary, SprintReviewSummary # Import Pydantic models
+# Remove old LLM connector import
+from history_components.history_service import HistoryService # HistoryEntry is now in models
+# Import models from central models.py
+from models import HistoryEntry, DailySummary, SprintReviewSummary
+from llm_components.llm_service import LlmService # Import new LlmService
+from services.generation_service import GenerationService # Import new GenerationService
 from typing import List # Import List for type hinting
 import os
 
@@ -21,8 +24,17 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-git_log_fetcher: GitLogFetcher = GitLogFetcher()
+# Instantiate concrete services
+git_service: GitLogFetcher = GitLogFetcher()
 history_service: HistoryService = HistoryService()
+llm_service: LlmService = LlmService() 
+
+# Instantiate GenerationService with dependency injection
+generation_service: GenerationService = GenerationService(
+    git_service=git_service,
+    llm_service=llm_service,
+    history_service=history_service
+)
 
 def format_error(error):
     return {
@@ -30,39 +42,8 @@ def format_error(error):
         'traceback': traceback.format_exc()
     }
 
-# Helper function to format DailySummary object to string
-def format_daily_summary(summary: DailySummary) -> str:
-    lines = []
-    lines.append(f"- Date: {summary.date}")
-    lines.append("") # Add a blank line after the date
-    for repo in summary.repositories:
-        lines.append(f"  - Repository Name: {repo.name}")
-        for branch in repo.branches:
-            lines.append(f"    - Branch: {branch.name}")
-            for commit in branch.commits:
-                purpose_str = f" {commit.purpose}" if commit.purpose else ""
-                lines.append(f"      - ({commit.scope}) {commit.description}{purpose_str}")
-        lines.append("") # Add a blank line between repositories
-    # Remove the last blank line if it exists
-    if lines and lines[-1] == "":
-        lines.pop()
-    return "\n".join(lines)
-
-# Helper function to format SprintReviewSummary object to string
-def format_sprint_review(summary_obj: SprintReviewSummary) -> str:
-    lines = []
-    if not summary_obj or not summary_obj.tickets:
-        return "No sprint review summary generated."
-        
-    for ticket in summary_obj.tickets:
-        lines.append(f"- Ticket ID: {ticket.ticket_id}")
-        lines.append(f"- Branch Name: {ticket.branch_name}")
-        lines.append(f"- Summary: {ticket.summary}")
-        lines.append("------------") # Separator
-    # Remove the last separator if it exists
-    if lines and lines[-1] == "------------":
-        lines.pop()
-    return "\n".join(lines)
+# Remove helper functions format_daily_summary and format_sprint_review
+# as this logic is now within GenerationService (or potentially a dedicated formatter)
 
 @app.route('/')
 def home():
@@ -75,115 +56,70 @@ def serve_image(filename):
 @app.route('/run-eod', methods=['POST'])
 def run_eod():
     def generate():
+        logging.info("Route /run-eod called.")
+        yield "Starting EOD Generator...\n"
         try:
-            logging.info("Starting EOD Generator")
-            yield "Starting EOD Generator...\n"
-            
-            eod_logs = git_log_fetcher.get_git_logs(days=1)
-            yield "Git logs retrieved successfully\n"
-            
-            # Generate the summary object
-            summary_object: DailySummary = llm_eod_summary_generator(collected_commits=eod_logs)
-            logging.info("LLM generated DailySummary object successfully.")
-            
-            # Format the object into a string
-            formatted_response = format_daily_summary(summary_object)
-            yield "Summary formatted successfully\n"
+            # Delegate to GenerationService
+            formatted_response, error_message = generation_service.generate_eod_report()
 
-            # Save to history (using the formatted string)
-            entry = HistoryEntry(
-                entry_type="EOD",
-                response=formatted_response, # Save the string version
-                status="passed"
-            )
-            history_service.add_entry(entry)
-            yield "History updated\n"
-            
-            yield f"RESPONSE_START\n{formatted_response}\nRESPONSE_END"
-            
+            if error_message:
+                yield f"Error: {error_message}\n"
+            else:
+                yield "EOD report generated successfully.\n"
+                yield "History updated.\n" # History is updated within the service
+                yield f"RESPONSE_START\n{formatted_response}\nRESPONSE_END"
+
         except Exception as e:
+            # Catch potential errors during service call setup or unexpected issues
             error_details = format_error(e)
-            logging.error(f"Error in run_eod: {error_details}")
-            
-            # Save error to history
-            entry = HistoryEntry(
-                entry_type="EOD",
-                response=str(e),
-                status="error"
-            )
-            history_service.add_entry(entry)
-            
-            yield f"Error: {str(e)}\n"
-    
+            logging.error(f"Unexpected error in /run-eod route: {error_details}")
+            yield f"Unexpected Error: {str(e)}\n"
+            # Optionally add history entry here if service failed before adding its own
+
     return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/run-sprint-review', methods=['POST'])
 def run_sprint_review():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-            
-        start_date = data.get('startDate')
-        end_date = data.get('endDate')
-        tickets = data.get('tickets', [])
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
 
-        if not all([start_date, end_date]):
-            return jsonify({'error': 'Missing required date parameters'}), 400
+    start_date = data.get('startDate')
+    end_date = data.get('endDate')
+    # Convert tickets list/dict to string if needed by LLM service, or adjust service
+    tickets_data = data.get('tickets', [])
+    tickets_str = json.dumps(tickets_data) # Assuming service expects stringified JSON
 
-        def generate():
-            try:
-                yield f"Fetching Git logs from {start_date} to {end_date}...\n"
-                
-                sprint_review_logs = git_log_fetcher.get_git_logs_by_date_range(start_date, end_date)
-                yield "Git logs retrieved successfully\n"
-                
-                # Generate the summary object (which contains the list)
-                summary_obj: SprintReviewSummary = llm_sprint_review_summary_generator(
-                    collected_commits=sprint_review_logs,
-                    tickets=tickets
-                )
-                num_tickets = len(summary_obj.tickets) if summary_obj and summary_obj.tickets else 0
-                logging.info(f"LLM generated SprintReviewSummary object with {num_tickets} tickets successfully.")
+    if not all([start_date, end_date]):
+        return jsonify({'error': 'Missing required date parameters'}), 400
 
-                # Format the object into a string
-                formatted_summary = format_sprint_review(summary_obj)
-                logging.info(f"Formatted sprint review length: {len(formatted_summary)}")
-                # Log first 200 chars for preview, handle potential short strings
-                preview_len = min(200, len(formatted_summary))
-                logging.info(f"Formatted sprint review preview: {formatted_summary[:preview_len]}...")
-                yield "Summary formatted successfully\n"
+    def generate():
+        logging.info("Route /run-sprint-review called.")
+        yield f"Starting Sprint Review generation for {start_date} to {end_date}...\n"
+        try:
+            # Delegate to GenerationService
+            formatted_summary, error_message = generation_service.generate_sprint_review_report(
+                start_date=start_date,
+                end_date=end_date,
+                tickets=tickets_str # Pass stringified tickets
+            )
 
-                # Save to history (using the formatted string)
-                entry = HistoryEntry(
-                    entry_type="SPRINT_REVIEW",
-                    response=formatted_summary, # Save the string version
-                    status="passed"
-                )
-                history_service.add_entry(entry)
-                yield "History updated\n"
-                
+            if error_message:
+                yield f"Error: {error_message}\n"
+            else:
+                yield "Sprint Review report generated successfully.\n"
+                yield "History updated.\n" # History is updated within the service
                 yield f"RESPONSE_START\n{formatted_summary}\nRESPONSE_END"
-                
-            except Exception as e:
-                error_details = format_error(e)
-                logging.error(f"Error in run_sprint_review: {error_details}")
-                
-                # Save error to history
-                entry = HistoryEntry(
-                    entry_type="SPRINT_REVIEW",
-                    response=str(e),
-                    status="error"
-                )
-                history_service.add_entry(entry)
-                
-                yield f"Error: {str(e)}\n"
-        
-        return Response(generate(), mimetype='text/event-stream')
-    except Exception as e:
-        error_details = format_error(e)
-        logging.error(f"Error processing sprint review request: {error_details}")
-        return jsonify({'error': str(e)}), 500
+
+        except Exception as e:
+            # Catch potential errors during service call setup or unexpected issues
+            error_details = format_error(e)
+            logging.error(f"Unexpected error in /run-sprint-review route: {error_details}")
+            yield f"Unexpected Error: {str(e)}\n"
+            # Optionally add history entry here if service failed before adding its own
+
+    return Response(generate(), mimetype='text/event-stream')
+    # Removed outer try-except as errors are handled within generate() or by Flask's handler
 
 @app.errorhandler(Exception)
 def handle_error(e):

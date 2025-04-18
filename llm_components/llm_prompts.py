@@ -1,23 +1,5 @@
-from typing import List
-from pydantic import BaseModel, Field
-
-# EOD Models
-class CommitSummary(BaseModel):
-    scope: str = Field(description="Area of focus extracted from commit message")
-    description: str = Field(description="Brief description of the change")
-    purpose: str = Field(default="", description="Optional purpose or rationale for the change")
-
-class BranchSummary(BaseModel):
-    name: str = Field(description="Name of the branch")
-    commits: List[CommitSummary] = Field(description="List of commits in this branch")
-
-class RepositorySummary(BaseModel):
-    name: str = Field(description="Name of the repository")
-    branches: List[BranchSummary] = Field(description="List of branches with commits")
-
-class DailySummary(BaseModel):
-    date: str = Field(description="Date in YYYY-MM-DD format")
-    repositories: List[RepositorySummary] = Field(description="List of repositories with commits")
+# This file now only contains prompt templates.
+# Models have been moved to models.py
 
 eod_human_prompt = """
 Generate a structured summary of the following commits:
@@ -67,15 +49,7 @@ Follow these rules:
 5. Keep descriptions concise but clear
 """
 
-# Sprint Review Models
-class TicketSummary(BaseModel):
-    ticket_id: str = Field(description="Ticket identifier (e.g., TICKET-123)")
-    branch_name: str = Field(description="Name of the Git branch")
-    summary: str = Field(description="Business-focused summary of completed work")
-
-# Wrapper model for Sprint Review output
-class SprintReviewSummary(BaseModel):
-    tickets: List[TicketSummary] = Field(description="List of summaries for each ticket")
+# Sprint Review Models removed, moved to models.py
 
 sprint_review_human_prompt = """
 Generate a structured summary of the sprint work using these commits and tickets:

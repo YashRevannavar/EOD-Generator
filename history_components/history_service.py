@@ -3,42 +3,12 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional
 import uuid
+from services.interfaces import IHistoryService # Import the interface
+from models import HistoryEntry # Import HistoryEntry from models.py
 
-class HistoryEntry:
-    def __init__(
-        self,
-        entry_type: str,
-        response: str,
-        status: str,
-        date: Optional[str] = None,
-        entry_id: Optional[str] = None
-    ):
-        self.id = entry_id or str(uuid.uuid4())
-        self.type = entry_type
-        self.date = date or datetime.now().isoformat()
-        self.response = response
-        self.status = status
+# HistoryEntry class definition removed
 
-    def to_dict(self) -> Dict:
-        return {
-            "id": self.id,
-            "type": self.type,
-            "date": self.date,
-            "response": self.response,
-            "status": self.status
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict) -> 'HistoryEntry':
-        return cls(
-            entry_type=data["type"],
-            response=data["response"],
-            status=data["status"],
-            date=data["date"],
-            entry_id=data["id"]
-        )
-
-class HistoryService:
+class HistoryService(IHistoryService): # Inherit from the interface
     HISTORY_FILE = "data/.history.json"
 
     def __init__(self):

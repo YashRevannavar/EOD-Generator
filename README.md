@@ -1,10 +1,10 @@
 # EOD Generator
 
-An automated tool that generates End-of-Day (EOD) summaries and Sprint Reviews from Git commit logs using AWS Bedrock's Claude 3 LLM, with a web interface for easy access.
+An automated tool that generates End-of-Day (EOD) summaries and Sprint Reviews from Git commit logs using a configurable LLM (defaults to Ollama), with a web interface for easy access.
 
 ## Description
 
-EOD Generator scans specified Git repositories, collects commit logs, and uses AWS Bedrock's Claude 3 to generate meaningful summaries of development activities. It offers two main features:
+EOD Generator scans specified Git repositories, collects commit logs, and uses a Large Language Model (LLM), such as one hosted via Ollama, to generate meaningful summaries of development activities. It offers two main features:
 
 1. **EOD Summary**: Generates daily summaries of development activities across repositories
 2. **Sprint Review**: Creates comprehensive sprint review reports by analyzing commits within a date range and correlating them with ticket IDs
@@ -25,8 +25,7 @@ The tool features a web interface for easy interaction and real-time summary gen
 
 - Python 3.x
 - Git installed and accessible from command line
-- AWS account with Bedrock access
-- AWS credentials configured locally
+- Ollama installed and running locally (or access to another LLM configured via environment variables)
 
 ## Installation
 
@@ -43,11 +42,11 @@ pip install -r requirements.txt
 
 3. Create a `.env` file in the root directory with:
 ```env
-REPO_PATHS="/path/to/your/repositories"  # Directory containing Git repositories to scan
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_REGION=your_aws_region
+# REPO_PATHS is now configured via constants.py, update it there if needed.
+# Example for Ollama configuration:
+OLLAMA_MODEL="deepseek-coder:6.7b" # Specify the Ollama model to use (e.g., llama3, mistral)
 ```
+   *(Note: The `REPO_PATHS` configuration has been moved to `environment/constants.py`)*
 
 ## Usage
 
@@ -62,28 +61,35 @@ Access the web interface at `http://localhost:5001` to:
 - View real-time progress updates
 - Get formatted, easy-to-read summaries
 
-## Key Components
+## Key Components (Refactored Architecture)
+
+The application follows a service-oriented architecture with dependency inversion:
+
+### Core Models (`models.py`)
+- Defines Pydantic models for data structures used throughout the application (e.g., `HistoryEntry`, `DailySummary`, `SprintReviewSummary`).
+
+### Service Interfaces (`services/interfaces.py`)
+- Defines abstract base classes (ABCs) for core services (`IGitService`, `ILlmService`, `IHistoryService`), establishing contracts for implementations.
+
+### Generation Service (`services/generation_service.py`)
+- Orchestrates the EOD and Sprint Review generation process.
+- Depends on the service interfaces (`IGitService`, `ILlmService`, `IHistoryService`) via dependency injection.
+- Contains the primary business logic for fetching data, calling the LLM, formatting results, and saving history.
+
+### Concrete Service Implementations
+- **Git Service (`git_components/git_service.py`)**: Implements `IGitService`. Uses helper shell scripts (`eod_git_connector.sh`, `sprint_review_git_connector.sh`) to fetch Git logs.
+- **LLM Service (`llm_components/llm_service.py`)**: Implements `ILlmService`. Interacts with the configured LLM (defaulting to Ollama via LangChain) to generate summaries based on prompts defined in `llm_components/llm_prompts.py`.
+- **History Service (`history_components/history_service.py`)**: Implements `IHistoryService`. Manages loading and saving generation history to a JSON file (`data/.history.json`).
 
 ### Backend (`main.py`)
-- Flask web server setup
-- API endpoints for EOD and Sprint Review generation
-- Real-time progress updates using server-sent events
-- Error handling and logging
-
-### Git Service (`git_components/git_service.py`)
-- `get_git_logs()`: Collects commit logs from all repositories
-- `get_git_logs_by_date_range()`: Retrieves logs for specific date ranges
-- `get_git_logs_for_single_repo()`: Retrieves logs from a single repository
-
-### LLM Connector (`llm_components/llm_connector.py`)
-- `get_llm_bedrock_ai()`: Initializes AWS Bedrock Claude 3 client
-- `llm_eod_summary_generator()`: Processes git logs for daily summaries
-- `llm_sprint_review_summary_generator()`: Generates sprint review reports
+- Sets up the Flask web server.
+- Defines API endpoints (`/run-eod`, `/run-sprint-review`, history endpoints, etc.).
+- Instantiates concrete services and injects them into `GenerationService`.
+- Delegates request handling to `GenerationService`.
+- Handles streaming responses (Server-Sent Events) for real-time updates.
 
 ### Web Interface (`static/`)
-- Clean, intuitive user interface
-- Real-time progress updates
-- Support for both EOD and Sprint Review generation
+- Provides the user interface (HTML, CSS, JavaScript) for interacting with the backend API.
 
 ## Output Format
 
@@ -111,19 +117,18 @@ Access the web interface at `http://localhost:5001` to:
 
 - flask: Web server framework
 - flask-cors: Cross-origin resource sharing
-- langchain-aws: AWS Bedrock integration
-- python-dotenv: Environment variable management
+- langchain-community: Provides Ollama integration (and potentially others)
 - langchain-core: Core LangChain functionality
+- python-dotenv: Environment variable management
+- pydantic: Data validation and modeling
 
 ## Environment Requirements
 
-- AWS Bedrock enabled in your AWS account
-- Proper IAM permissions for Bedrock access
-- Environment variables:
-  - REPO_PATHS
-  - AWS_ACCESS_KEY_ID
-  - AWS_SECRET_ACCESS_KEY
-  - AWS_REGION
+- Ollama installed and running locally (ensure the desired model is pulled, e.g., `ollama pull deepseek-coder:6.7b`).
+- Environment variables (optional, defined in `.env`):
+  - `OLLAMA_MODEL`: Specifies the Ollama model to use (defaults if not set).
+- Configuration:
+  - Update `environment/constants.py` with the correct `root_path` pointing to the directory containing your Git repositories.
 
 ## Error Handling
 
