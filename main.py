@@ -9,6 +9,8 @@ import signal
 from git_components.git_service import GitLogFetcher
 from llm_components.llm_connector import llm_eod_summary_generator, llm_sprint_review_summary_generator
 from history_components.history_service import HistoryService, HistoryEntry
+from llm_components.llm_prompts import DailySummary, TicketSummary, SprintReviewSummary # Import Pydantic models
+from typing import List # Import List for type hinting
 import os
 
 app = Flask(__name__, static_folder='static', static_url_path='')
@@ -28,6 +30,40 @@ def format_error(error):
         'traceback': traceback.format_exc()
     }
 
+# Helper function to format DailySummary object to string
+def format_daily_summary(summary: DailySummary) -> str:
+    lines = []
+    lines.append(f"- Date: {summary.date}")
+    lines.append("") # Add a blank line after the date
+    for repo in summary.repositories:
+        lines.append(f"  - Repository Name: {repo.name}")
+        for branch in repo.branches:
+            lines.append(f"    - Branch: {branch.name}")
+            for commit in branch.commits:
+                purpose_str = f" {commit.purpose}" if commit.purpose else ""
+                lines.append(f"      - ({commit.scope}) {commit.description}{purpose_str}")
+        lines.append("") # Add a blank line between repositories
+    # Remove the last blank line if it exists
+    if lines and lines[-1] == "":
+        lines.pop()
+    return "\n".join(lines)
+
+# Helper function to format SprintReviewSummary object to string
+def format_sprint_review(summary_obj: SprintReviewSummary) -> str:
+    lines = []
+    if not summary_obj or not summary_obj.tickets:
+        return "No sprint review summary generated."
+        
+    for ticket in summary_obj.tickets:
+        lines.append(f"- Ticket ID: {ticket.ticket_id}")
+        lines.append(f"- Branch Name: {ticket.branch_name}")
+        lines.append(f"- Summary: {ticket.summary}")
+        lines.append("------------") # Separator
+    # Remove the last separator if it exists
+    if lines and lines[-1] == "------------":
+        lines.pop()
+    return "\n".join(lines)
+
 @app.route('/')
 def home():
     return app.send_static_file('index.html')
@@ -46,17 +82,18 @@ def run_eod():
             eod_logs = git_log_fetcher.get_git_logs(days=1)
             yield "Git logs retrieved successfully\n"
             
-            responses = llm_eod_summary_generator(collected_commits=eod_logs)
-            logging.info(f"Generated response length: {len(responses)}")
-            logging.info(f"Response preview: {responses[:100]}...")
+            # Generate the summary object
+            summary_object: DailySummary = llm_eod_summary_generator(collected_commits=eod_logs)
+            logging.info("LLM generated DailySummary object successfully.")
             
-            formatted_response = responses.strip().replace('\r\n', '\n').replace('\r', '\n')
-            yield "Summary generated successfully\n"
+            # Format the object into a string
+            formatted_response = format_daily_summary(summary_object)
+            yield "Summary formatted successfully\n"
 
-            # Save to history
+            # Save to history (using the formatted string)
             entry = HistoryEntry(
                 entry_type="EOD",
-                response=formatted_response,
+                response=formatted_response, # Save the string version
                 status="passed"
             )
             history_service.add_entry(entry)
@@ -101,20 +138,26 @@ def run_sprint_review():
                 sprint_review_logs = git_log_fetcher.get_git_logs_by_date_range(start_date, end_date)
                 yield "Git logs retrieved successfully\n"
                 
-                summary = llm_sprint_review_summary_generator(
+                # Generate the summary object (which contains the list)
+                summary_obj: SprintReviewSummary = llm_sprint_review_summary_generator(
                     collected_commits=sprint_review_logs,
                     tickets=tickets
                 )
-                logging.info(f"Generated sprint review length: {len(summary)}")
-                logging.info(f"Sprint review preview: {summary[:100]}...")
-                
-                formatted_summary = summary.strip().replace('\r\n', '\n').replace('\r', '\n')
-                yield "Summary generated successfully\n"
+                num_tickets = len(summary_obj.tickets) if summary_obj and summary_obj.tickets else 0
+                logging.info(f"LLM generated SprintReviewSummary object with {num_tickets} tickets successfully.")
 
-                # Save to history
+                # Format the object into a string
+                formatted_summary = format_sprint_review(summary_obj)
+                logging.info(f"Formatted sprint review length: {len(formatted_summary)}")
+                # Log first 200 chars for preview, handle potential short strings
+                preview_len = min(200, len(formatted_summary))
+                logging.info(f"Formatted sprint review preview: {formatted_summary[:preview_len]}...")
+                yield "Summary formatted successfully\n"
+
+                # Save to history (using the formatted string)
                 entry = HistoryEntry(
                     entry_type="SPRINT_REVIEW",
-                    response=formatted_summary,
+                    response=formatted_summary, # Save the string version
                     status="passed"
                 )
                 history_service.add_entry(entry)

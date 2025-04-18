@@ -1,69 +1,114 @@
+from typing import List
+from pydantic import BaseModel, Field
+
+# EOD Models
+class CommitSummary(BaseModel):
+    scope: str = Field(description="Area of focus extracted from commit message")
+    description: str = Field(description="Brief description of the change")
+    purpose: str = Field(default="", description="Optional purpose or rationale for the change")
+
+class BranchSummary(BaseModel):
+    name: str = Field(description="Name of the branch")
+    commits: List[CommitSummary] = Field(description="List of commits in this branch")
+
+class RepositorySummary(BaseModel):
+    name: str = Field(description="Name of the repository")
+    branches: List[BranchSummary] = Field(description="List of branches with commits")
+
+class DailySummary(BaseModel):
+    date: str = Field(description="Date in YYYY-MM-DD format")
+    repositories: List[RepositorySummary] = Field(description="List of repositories with commits")
+
 eod_human_prompt = """
-Hey, Generate a summary for me.
-Here are my commits:
+Generate a structured summary of the following commits:
 {collected_commits}
+
+The response should be a valid JSON object matching this structure:
+{{
+    "date": "YYYY-MM-DD",
+    "repositories": [
+        {{
+            "name": "repo-name",
+            "branches": [
+                {{
+                    "name": "branch-name",
+                    "commits": [
+                        {{
+                            "scope": "area",
+                            "description": "what changed",
+                            "purpose": "why it changed (optional)"
+                        }}
+                    ]
+                }}
+            ]
+        }}
+    ]
+}}
 """
+
 eod_system_prompt = """
-You are an AI assistant tasked with generating a structured and technical End-of-Day (EOD) summary based on provided Git commits. The summary should be organized by date and repository, highlighting the scope and purpose of each change.
+You are an AI assistant that generates structured EOD summaries from Git commits.
+Your response must be valid JSON that can be parsed into the following structure:
+- date (string, YYYY-MM-DD format)
+- repositories (list of repository objects)
+  - name (string)
+  - branches (list of branch objects)
+    - name (string)
+    - commits (list of commit objects)
+      - scope (string, extracted from commit message)
+      - description (string, what changed)
+      - purpose (string, optional context)
 
-Instructions:
-- Date Grouping: Organize commits chronologically by their commit date.
-- Repository and Branch: Within each date, group commits by repository and then by branch name.
-- Commit Summaries: For each commit:
-  - Extract the scope from the commit message (e.g., in 'type(scope): description', 'scope' is the area of focus).
-  - Group commits under their respective scopes to emphasize the area of impact.
-  - Begin each summary with the scope in parentheses, followed by a concise description of the change.
-  - Optionally, include the rationale or purpose of the change to add context.
-
-Formatting Example:
-------------
-- Date: YYYY-MM-DD
-
-  - Repository Name: repo-name
-    - Branch: branch-name
-      - (scope) Brief description of the change. Reason or purpose if applicable.
-      - (scope) Another change description. Additional context.
-
-  - Repository Name: another-repo
-    - Branch: another-branch
-      - (scope) Description of change.
-------------
-Never use ** in your response, keep it simple.
-Stick to the formatting and instructions provided do not respond with any other information like thinking process or reasoning.
+Follow these rules:
+1. Output only JSON, no other text
+2. Ensure all required fields are present
+3. Use consistent date format
+4. Extract scopes from commits
+5. Keep descriptions concise but clear
 """
+
+# Sprint Review Models
+class TicketSummary(BaseModel):
+    ticket_id: str = Field(description="Ticket identifier (e.g., TICKET-123)")
+    branch_name: str = Field(description="Name of the Git branch")
+    summary: str = Field(description="Business-focused summary of completed work")
+
+# Wrapper model for Sprint Review output
+class SprintReviewSummary(BaseModel):
+    tickets: List[TicketSummary] = Field(description="List of summaries for each ticket")
 
 sprint_review_human_prompt = """
-Generate a outcome based summary for me.
+Generate a structured summary of the sprint work using these commits and tickets:
+Commits: {collected_commits}
+Tickets: {tickets}
 
-Here are my commits:
-{collected_commits}
-
-Here are my tickets:
-{tickets}
+The response should be a valid JSON object matching this structure:
+{{
+    "tickets": [
+        {{
+            "ticket_id": "TICKET-123",
+            "branch_name": "feat/TICKET-123",
+            "summary": "Business-focused description of completed work"
+        }}
+    ]
+}}
 """
 
 sprint_review_system_prompt = """
-Your task is to generate a concise, clear, and outcome-based summary of the sprint review using the provided Git commits and tickets.
+You are an AI assistant that generates business-focused sprint review summaries.
+Your response must be valid JSON conforming to the following structure:
+{format_instructions}
 
-Guidelines:
-- Audience: Non-technical stakeholders interested in business outcomes and user value.
-- Structure: Organize the summary by Ticket ID, using the Git branch name as the identifier.
-- Content:
-  - Translate technical commit messages into plain language that highlights the business value or user impact.
-  - For each Ticket ID:
-    - Provide a brief, outcome-focused summary of the work completed.
-    - Emphasize how the work aligns with the ticket's description and acceptance criteria.
-    - Highlight the benefits or improvements resulting from the completed tasks.
-- Exclusions:
-  - Avoid technical jargon, such as specific classes, functions, or code implementations.
-  - Do not include detailed ticket information; focus solely on summarizing the outcomes of the tasks completed during the sprint.
+Each ticket summary object within the 'tickets' list **MUST** contain:
+- ticket_id (string)
+- branch_name (string)
+- summary (string) - **This field is mandatory and must contain a non-empty string summarizing the work.**
 
-Format:
-------------
-- Ticket ID: [e.g., TICKET-123]
-- Branch Name: [e.g., feat/TICKET-123]
-- Summary: [Plain language summary focusing on outcomes and business value.]
-------------
-Never use ** in your response, keep it simple.
-Stick to the formatting and instructions provided do not respond with any other information like thinking process or reasoning.
+Follow these rules:
+1. Output only the JSON object, with no other text before or after it.
+2. **Crucially, include the `summary` field for every ticket.** Generate a meaningful, business-focused summary for each ticket based on the provided commits and ticket information.
+3. Focus on business value and outcomes.
+4. Avoid technical jargon.
+5. Keep summaries concise but informative.
+6. Emphasize user impact and benefits.
 """
