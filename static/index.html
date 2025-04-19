@@ -62,54 +62,7 @@
             min-height: 100vh;
         }
 
-        .btn-3d {
-            position: relative;
-            transition: all 0.2s ease;
-            transform-style: preserve-3d;
-            transform: translateZ(0);
-        }
-
-        .btn-3d::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
-        }
-
-        .btn-3d::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            box-shadow: 
-                0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -2px rgba(0, 0, 0, 0.1),
-                0 8px 24px -4px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
-        }
-
-        .btn-3d:hover {
-            transform: translateY(-2px) translateZ(0);
-        }
-
-        .btn-3d:hover::after {
-            box-shadow: 
-                0 6px 8px -1px rgba(0, 0, 0, 0.15),
-                0 4px 6px -2px rgba(0, 0, 0, 0.1),
-                0 12px 32px -4px rgba(0, 0, 0, 0.25);
-        }
-
-        .btn-3d:active {
-            transform: translateY(1px) translateZ(0);
-        }
-
-        .btn-3d:active::after {
-            box-shadow: 
-                0 2px 4px -1px rgba(0, 0, 0, 0.1),
-                0 1px 2px -1px rgba(0, 0, 0, 0.1),
-                0 4px 16px -4px rgba(0, 0, 0, 0.15);
-        }
+        /* Removed btn-3d styles for flat design */
     </style>
     <script src="/script.js" defer></script>
 </head>
@@ -129,7 +82,7 @@
                     </p>
                 </div>
 
-                <div class="bg-dark-500/50 backdrop-blur-sm p-6 rounded-lg border border-dark-400 mb-8">
+                <div class="bg-dark-500/50 backdrop-blur-sm p-6 rounded-lg mb-8">
                     <h2 class="text-xl font-semibold text-gray-200 mb-4">Features</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
                         <div class="flex items-start gap-3">
@@ -154,17 +107,17 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button onclick="handleEOD()" class="btn-3d w-full p-6 bg-gradient-to-br from-primary-light to-primary rounded-lg shadow-lg flex flex-col items-center">
+                    <button onclick="handleEOD()" class="w-full p-6 bg-primary rounded-lg flex flex-col items-center transition-colors hover:bg-primary-dark">
                         <span class="text-xl font-semibold">Generate EOD</span>
                         <span class="text-sm mt-2 opacity-80">Create a summary of today's Git commits</span>
                     </button>
                     
-                    <button onclick="showSprintReviewModal()" class="btn-3d w-full p-6 bg-gradient-to-br from-success-light to-success rounded-lg shadow-lg flex flex-col items-center">
+                    <button onclick="showSprintReviewModal()" class="w-full p-6 bg-success rounded-lg flex flex-col items-center transition-colors hover:bg-success-dark">
                         <span class="text-xl font-semibold">Run Sprint Review</span>
                         <span class="text-sm mt-2 opacity-80">Generate a comprehensive sprint summary</span>
                     </button>
 
-                    <button onclick="showHistory()" class="btn-3d w-full p-6 bg-gradient-to-br from-dark-100 to-dark-300 rounded-lg shadow-lg flex flex-col items-center">
+                    <button onclick="showHistory()" class="w-full p-6 bg-dark-300 rounded-lg flex flex-col items-center transition-colors hover:bg-dark-200">
                         <span class="text-xl font-semibold">View History</span>
                         <span class="text-sm mt-2 opacity-80">Browse past EODs and Sprint Reviews</span>
                     </button>
@@ -172,7 +125,7 @@
             </div>
             
             <div class="flex gap-4">
-                <button onclick="quit()" class="btn-3d mt-12 px-6 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg">
+                <button onclick="quit()" class="mt-12 px-6 py-2 bg-dark-400 text-gray-300 rounded-lg transition-colors hover:bg-dark-300">
                     Quit
                 </button>
             </div>
@@ -182,7 +135,7 @@
         <!-- EOD Report Screen -->
         <div id="reportScreen" class="min-h-screen p-6 hidden">
             <nav class="mb-6">
-                <button onclick="goHome()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg flex items-center gap-2 group">
+                <button onclick="goHome()" class="px-4 py-2 bg-dark-400 text-gray-300 rounded-lg flex items-center gap-2 group transition-colors hover:bg-dark-300">
                     <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
@@ -192,19 +145,19 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-8rem)]">
                 <!-- Logs Panel -->
-                <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg overflow-auto border border-dark-400">
-                    <div class="p-4 border-b border-dark-400">
+                <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg overflow-auto">
+                    <div class="p-4 border-b border-dark-600"> {/* Slightly darker border for separation */}
                         <h2 class="font-semibold text-gray-200">Logs</h2>
                     </div>
                     <pre id="logs" class="p-4 font-mono text-sm text-gray-300 whitespace-pre-wrap"></pre>
                 </div>
 
                 <!-- Response Panel -->
-                <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg overflow-auto relative border border-dark-400">
-                    <div class="p-4 border-b border-dark-400 flex justify-between items-center">
+                <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg overflow-auto relative">
+                    <div class="p-4 border-b border-dark-600 flex justify-between items-center"> {/* Slightly darker border for separation */}
                         <h2 class="font-semibold text-gray-200">Generated Response</h2>
                         <div class="flex gap-2">
-                            <button onclick="copyResponse()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg text-sm">
+                            <button onclick="copyResponse()" class="px-4 py-2 bg-dark-400 text-gray-300 rounded-lg text-sm transition-colors hover:bg-dark-300">
                                 Copy
                             </button>
                         </div>
@@ -218,18 +171,18 @@
 
         <!-- Sprint Review Modal -->
         <div id="sprintReviewModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden backdrop-blur-sm">
-            <div class="bg-dark-500/95 backdrop-blur-sm rounded-lg shadow-xl p-6 w-full max-w-xl mx-4 border border-dark-400">
+            <div class="bg-dark-500/95 backdrop-blur-sm rounded-lg shadow-xl p-6 w-full max-w-xl mx-4">
                 <h2 class="text-2xl font-bold mb-6 text-gray-100">Sprint Review Details</h2>
                 
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
-                            <input type="date" id="startDate" class="w-full px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200">
+                            <input type="date" id="startDate" class="w-full px-3 py-2 bg-dark-400 rounded-md focus:ring-2 focus:ring-primary text-gray-200">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-1">End Date</label>
-                            <input type="date" id="endDate" class="w-full px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200">
+                            <input type="date" id="endDate" class="w-full px-3 py-2 bg-dark-400 rounded-md focus:ring-2 focus:ring-primary text-gray-200">
                         </div>
                     </div>
 
@@ -237,8 +190,8 @@
                         <label class="block text-sm font-medium text-gray-300 mb-1">Tickets</label>
                         <div class="space-y-2" id="ticketList">
                             <div class="flex gap-2">
-                                <input type="text" class="ticket-input flex-grow px-3 py-2 bg-dark-400 border border-dark-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-gray-200" placeholder="Enter ticket">
-                                <button onclick="removeTicket(this)" class="btn-3d px-3 py-2 bg-gradient-to-b from-red-500/90 to-red-600 text-white rounded-md">
+                                <input type="text" class="ticket-input flex-grow px-3 py-2 bg-dark-400 rounded-md focus:ring-2 focus:ring-primary text-gray-200" placeholder="Enter ticket">
+                                <button onclick="removeTicket(this)" class="px-3 py-2 bg-red-600 text-white rounded-md transition-colors hover:bg-red-700">
                                     ✕
                                 </button>
                             </div>
@@ -253,10 +206,10 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button onclick="hideSprintReviewModal()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg">
+                    <button onclick="hideSprintReviewModal()" class="px-4 py-2 bg-dark-400 text-gray-300 rounded-lg transition-colors hover:bg-dark-300">
                         Cancel
                     </button>
-                    <button onclick="handleSprintReviewSubmit()" class="btn-3d px-4 py-2 bg-gradient-to-br from-success-light to-success text-white rounded-lg">
+                    <button onclick="handleSprintReviewSubmit()" class="px-4 py-2 bg-success text-white rounded-lg transition-colors hover:bg-success-dark">
                         Generate Report
                     </button>
                 </div>
@@ -264,9 +217,9 @@
         </div>
 
         <!-- History Screen -->
-        <div id="historyScreen" class="min-h-screen p-6 hidden">
-            <nav class="mb-6">
-                <button onclick="goHome()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg flex items-center gap-2 group">
+        <div id="historyScreen" class="min-h-screen px-6 py-12 hidden max-w-4xl mx-auto"> <!-- Added max-width, centered, increased vertical padding -->
+            <nav class="mb-8"> <!-- Increased bottom margin -->
+                <button onclick="goHome()" class="px-4 py-2 bg-dark-400 text-gray-300 rounded-lg flex items-center gap-2 group transition-colors hover:bg-dark-300">
                     <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
@@ -274,35 +227,55 @@
                 </button>
             </nav>
 
-            <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg border border-dark-400">
-                <div class="p-4 border-b border-dark-400 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-gray-200">History</h2>
-                    <button onclick="clearAllHistory()" class="btn-3d px-4 py-2 bg-gradient-to-b from-red-500/90 to-red-600 text-white rounded-lg text-sm">
+            <div class="bg-dark-500/90 backdrop-blur-sm rounded-lg shadow-md"> <!-- Added subtle shadow -->
+                <div class="p-6 border-b border-dark-600 flex justify-between items-center"> <!-- Increased padding, adjusted title size -->
+                    <h2 class="text-2xl font-semibold text-gray-100">History</h2>
+                    <div class="flex gap-4 items-center">
+                        <div>
+                            <label for="historyTypeFilter" class="text-sm font-medium text-gray-300 mr-2">Type:</label>
+                            <select id="historyTypeFilter" onchange="applyHistoryFilters()" class="px-3 py-1.5 bg-dark-400 text-gray-200 rounded-md text-sm focus:ring-2 focus:ring-primary">
+                                <option value="all">All</option>
+                                <option value="eod">EOD</option>
+                                <option value="sprint">Sprint</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="historyStatusFilter" class="text-sm font-medium text-gray-300 mr-2">Status:</label>
+                            <select id="historyStatusFilter" onchange="applyHistoryFilters()" class="px-3 py-1.5 bg-dark-400 text-gray-200 rounded-md text-sm focus:ring-2 focus:ring-primary">
+                                <option value="all">All</option>
+                                <option value="pass">Pass</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="clearAllHistory()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm transition-colors hover:bg-red-700">
                         Clear All
                     </button>
                 </div>
-                <div id="historyList" class="divide-y divide-dark-400">
+                <div id="historyList" class="divide-y divide-dark-600"> <!-- Slightly darker divider -->
                     <!-- History entries will be dynamically inserted here -->
                 </div>
             </div>
 
             <!-- History Entry Template (Hidden) -->
             <template id="historyEntryTemplate">
-                <div class="p-4 hover:bg-dark-400/50 transition-colors">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <span class="text-sm text-gray-400 entry-date"></span>
-                            <span class="ml-2 px-2 py-0.5 text-xs rounded entry-type"></span>
-                            <span class="ml-2 px-2 py-0.5 text-xs rounded entry-status"></span>
+                <div class="p-6 hover:bg-dark-400/50 transition-colors"> <!-- Increased padding -->
+                    <div class="flex justify-between items-center mb-3"> <!-- Centered items vertically, increased margin -->
+                        <div class="flex items-center gap-3"> <!-- Grouped date/type/status -->
+                            <span class="text-base font-medium text-gray-200 entry-date"></span> <!-- Made date more prominent -->
+                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full entry-type"></span> <!-- Adjusted badge padding/style -->
+                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full entry-status"></span> <!-- Adjusted badge padding/style -->
                         </div>
-                        <button onclick="deleteHistoryEntry(this)" class="text-red-400 hover:text-red-300 transition-colors">
+                        <!-- Made delete button less prominent until hover -->
+                        <button onclick="deleteHistoryEntry(this)" class="text-gray-500 hover:text-red-400 transition-colors p-1 rounded-full -mr-1">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
                         </button>
                     </div>
-                    <pre class="text-sm text-gray-300 whitespace-pre-wrap entry-response overflow-hidden max-h-32"></pre>
-                    <button onclick="toggleResponseVisibility(this)" class="mt-2 text-primary-light hover:text-primary text-sm transition-colors">
+                    <pre class="text-base text-gray-300 whitespace-pre-wrap entry-response overflow-hidden max-h-32 mb-3"></pre> <!-- Increased response text size, added margin -->
+                    <button onclick="toggleResponseVisibility(this)" class="text-primary hover:text-primary-dark text-sm font-medium transition-colors"> <!-- Styled 'Show More' consistently -->
                         Show More
                     </button>
                 </div>
@@ -312,7 +285,7 @@
 
     <!-- Error Modal -->
     <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden backdrop-blur-sm z-50">
-        <div class="bg-dark-500/95 backdrop-blur-sm rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 border border-dark-400">
+        <div class="bg-dark-500/95 backdrop-blur-sm rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
             <h2 class="text-xl font-bold mb-4 text-gray-100 flex items-center gap-2">
                 <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -325,10 +298,10 @@
             </div>
 
             <div class="flex justify-end gap-3">
-                <button onclick="hideErrorModal()" class="btn-3d px-4 py-2 bg-gradient-to-b from-dark-300 to-dark-400 text-gray-300 rounded-lg">
+                <button onclick="hideErrorModal()" class="px-4 py-2 bg-dark-400 text-gray-300 rounded-lg transition-colors hover:bg-dark-300">
                     Cancel
                 </button>
-                <button onclick="retryOperation()" class="btn-3d px-4 py-2 bg-gradient-to-br from-primary-light to-primary text-white rounded-lg">
+                <button onclick="retryOperation()" class="px-4 py-2 bg-primary text-white rounded-lg transition-colors hover:bg-primary-dark">
                     Retry
                 </button>
             </div>

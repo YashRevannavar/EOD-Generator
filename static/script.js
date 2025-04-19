@@ -2,6 +2,8 @@
 let currentProcess = null;
 let lastEODContext = null;
 let lastSprintReviewContext = null;
+let allHistoryEntries = []; // Store all history entries for filtering
+
 
 function showHome() {
     document.getElementById('homeScreen').classList.remove('hidden');
@@ -29,6 +31,8 @@ async function loadHistory() {
         }
         const entries = await response.json();
         displayHistory(entries);
+        allHistoryEntries = entries; // Store all entries
+        applyHistoryFilters(); // Apply filters initially
     } catch (error) {
         showErrorModal('Failed to load history: ' + error.message);
     }
@@ -76,6 +80,28 @@ function displayHistory(entries) {
 
         historyList.appendChild(clone);
     });
+}
+
+
+function applyHistoryFilters() {
+    const typeFilter = document.getElementById('historyTypeFilter').value;
+    const statusFilter = document.getElementById('historyStatusFilter').value;
+
+    const filteredEntries = allHistoryEntries.filter(entry => {
+        // Check type: 'eod' matches 'EOD', 'sprint' matches 'SPRINT_REVIEW'
+        const typeMatch = typeFilter === 'all' ||
+                          (typeFilter === 'eod' && entry.type === 'EOD') ||
+                          (typeFilter === 'sprint' && entry.type === 'SPRINT_REVIEW');
+                          
+        // Check status: 'pass' matches 'passed', 'error' matches 'error'
+        const statusMatch = statusFilter === 'all' ||
+                            (statusFilter === 'pass' && entry.status === 'passed') ||
+                            (statusFilter === 'error' && entry.status === 'error');
+                            
+        return typeMatch && statusMatch;
+    });
+
+    displayHistory(filteredEntries);
 }
 
 function toggleResponseVisibility(button) {
